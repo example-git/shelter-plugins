@@ -143,14 +143,14 @@ export function onLoad() {
 
                 const messages = [
                   ...getMessageHistory()
-                    .slice(-7)
+                    .slice(-15)
                     .map((message) => ({
                       role: "user",
                       content: `${message.username}: ${message.message}`,
                     })),
                   {
                     role: "system",
-                    content: `generate a response as "${myUsername}" according to the prompt: "${prompt}. Output only your response as ${myUsername}"`,
+                    content: `generate a response to the messages above according to the prompt: "${prompt}"`,
                   },
                 ];
 
