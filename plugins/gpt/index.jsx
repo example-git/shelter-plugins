@@ -150,7 +150,7 @@ export function onLoad() {
                     })),
                   {
                     role: "system",
-                    content: `generate a response as "${myUsername}" according to the prompt: "${prompt}"`,
+                    content: `generate a response as "${myUsername}" according to the prompt: "${prompt}. Output only your response as ${myUsername}"`,
                   },
                 ];
 
