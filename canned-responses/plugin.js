@@ -1,4 +1,219 @@
-(()=>{var B=Object.create;var f=Object.defineProperty;var P=Object.getOwnPropertyDescriptor;var z=Object.getOwnPropertyNames;var I=Object.getPrototypeOf,R=Object.prototype.hasOwnProperty;var T=(e,t)=>()=>(t||e((t={exports:{}}).exports,t),t.exports),D=(e,t)=>{for(var n in t)f(e,n,{get:t[n],enumerable:!0})},C=(e,t,n,r)=>{if(t&&typeof t=="object"||typeof t=="function")for(let c of z(t))!R.call(e,c)&&c!==n&&f(e,c,{get:()=>t[c],enumerable:!(r=P(t,c))||r.enumerable});return e};var g=(e,t,n)=>(n=e!=null?B(I(e)):{},C(t||!e||!e.__esModule?f(n,"default",{value:e,enumerable:!0}):n,e)),O=e=>C(f({},"__esModule",{value:!0}),e);var v=T((ce,b)=>{b.exports=shelter.solidWeb});var de={};D(de,{onLoad:()=>ie,onUnload:()=>le});var m=g(v(),1),y=g(v(),1),$=g(v(),1),w=g(v(),1),p=g(v(),1),d=g(v(),1),A=(0,m.template)('<div class="pr-2"><div class="add-response"></div></div>',4),L=(0,m.template)('<div class="buttons-container"></div>',2),U=(0,m.template)('<div class="response"><div class="header"><div class="buttons"></div></div></div>',6),j=(0,m.template)('<div class="send-popout"><div class="header"><h3>Canned Responses</h3></div><div class="body"></div></div>',8),q=(0,m.template)("<div></div>",2),F=(0,m.template)('<div class="no-responses"><h4>No canned responses</h4><p>Click the "Manage" button to add some.</p></div>',6),J=(0,m.template)('<div id="canned-responses"><button><div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4l0 0 0 0 0 0 0 0 .3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"></path></svg></div></button></div>',10),{observeDom:H,ui:{injectCss:W,Button:h,openModal:Y,ModalRoot:G,ModalHeader:K,ModalBody:Q,ModalFooter:V,ModalSizes:X,ButtonColors:M,ButtonSizes:N,TextArea:Z,TextBox:ee,niceScrollbarsClass:te,showToast:ne},plugin:{store:o},util:{getFiber:se}}=shelter;o.responses||(o.responses=[]);var k=null,oe=()=>(0,d.createComponent)(G,{get size(){return X.MEDIUM},get children(){return[(0,d.createComponent)(K,{close:()=>k(),children:"Canned Responses"}),(0,d.createComponent)(Q,{get children(){let e=A.cloneNode(!0),t=e.firstChild;return(0,p.insert)(t,(0,d.createComponent)(h,{onClick:()=>{o.responses.push({id:Math.random().toString(36).substring(7),name:"New Response",content:""})},grow:!0,style:{width:"100%"},children:"Add Response"})),(0,p.insert)(e,()=>o.responses.map(n=>(()=>{let r=U.cloneNode(!0),c=r.firstChild,a=c.firstChild;return(0,p.insert)(c,(0,d.createComponent)(ee,{get value(){return n.name},placeholder:"Response name",onInput:s=>{let i=o.responses.findIndex(({id:l})=>l===n.id);o.responses[i].name=s}}),a),(0,p.insert)(a,(0,d.createComponent)(h,{get color(){return M.RED},get size(){return N.MEDIUM},onClick:()=>{o.responses.splice(o.responses.findIndex(({id:s})=>s===n.id),1),o.responses=[...o.responses]},children:"Delete"})),(0,p.insert)(r,(0,d.createComponent)(Z,{get value(){return n.content},placeholder:"Message content",onInput:s=>{let i=o.responses.findIndex(({id:l})=>l===n.id);o.responses[i].content=s}}),null),r})()),null),e}}),(0,d.createComponent)(V,{get children(){let e=L.cloneNode(!0);return(0,p.insert)(e,(0,d.createComponent)(h,{onClick:()=>{navigator.clipboard.writeText(JSON.stringify(o.responses)),ne({title:"Exported",content:"Canned responses copied to clipboard",duration:3e3})},grow:!0,children:"Export"}),null),(0,p.insert)(e,(0,d.createComponent)(h,{onClick:async()=>{let t=await navigator.clipboard.readText();o.responses=JSON.parse(t)},grow:!0,children:"Import"}),null),e}})]}}),re=e=>{let t=document.querySelector('[class*="slateContainer"]');se(t).child.pendingProps.editor.insertText(e)},u=null,S=null,_=()=>{if(u){u.remove(),u=null;return}let e=S.getBoundingClientRect();u=document.body.appendChild((()=>{let n=j.cloneNode(!0),r=n.firstChild,c=r.firstChild,a=r.nextSibling;return n.style.setProperty("width","300px"),(0,p.insert)(r,(0,d.createComponent)(h,{onClick:()=>{_(),k=Y(s=>oe())},children:"Manage"}),null),(0,p.insert)(a,(()=>{let s=(0,w.memo)(()=>o.responses.length>0);return()=>s()?(()=>{let i=q.cloneNode(!0);return i.style.setProperty("display","grid"),i.style.setProperty("gap",".5rem"),(0,p.insert)(i,()=>o.responses.map(l=>(0,d.createComponent)(h,{get size(){return N.MEDIUM},get color(){return M.SECONDARY},style:{width:"100%"},grow:!0,onClick:()=>{console.log(l.content),re(l.content),_()},get children(){return l.name}}))),(0,$.effect)(()=>i.className=`${te()} send-responses`),i})():F.cloneNode(!0)})()),(0,$.effect)(s=>{let i=`${e.top+(e.height+18)}px`,l=`${e.left+e.width/2}px`,x=`translate(-50%, calc(-100% - ${e.height+18}px))`;return i!==s._v$&&n.style.setProperty("top",s._v$=i),l!==s._v$2&&n.style.setProperty("left",s._v$2=l),x!==s._v$3&&n.style.setProperty("transform",s._v$3=x),s},{_v$:void 0,_v$2:void 0,_v$3:void 0}),n})());let t=n=>{u?.contains(n.target)||(u?.remove(),u=null,document.removeEventListener("click",t))};document.addEventListener("click",t)},E=null;function ie(){W(`
+(function(exports) {
+
+//#region rolldown:runtime
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __commonJS = (cb, mod) => function() {
+	return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+};
+var __copyProps = (to, from, except, desc) => {
+	if (from && typeof from === "object" || typeof from === "function") for (var keys = __getOwnPropNames(from), i = 0, n = keys.length, key; i < n; i++) {
+		key = keys[i];
+		if (!__hasOwnProp.call(to, key) && key !== except) __defProp(to, key, {
+			get: ((k) => from[k]).bind(null, key),
+			enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable
+		});
+	}
+	return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", {
+	value: mod,
+	enumerable: true
+}) : target, mod));
+
+//#endregion
+
+//#region solid-js/web
+var require_web = __commonJS({ "solid-js/web"(exports, module) {
+	module.exports = shelter.solidWeb;
+} });
+
+//#endregion
+//#region plugins/canned-responses/index.jsx
+var import_web = __toESM(require_web(), 1);
+var import_web$1 = __toESM(require_web(), 1);
+var import_web$2 = __toESM(require_web(), 1);
+var import_web$3 = __toESM(require_web(), 1);
+var import_web$4 = __toESM(require_web(), 1);
+var import_web$5 = __toESM(require_web(), 1);
+var import_web$6 = __toESM(require_web(), 1);
+var import_web$7 = __toESM(require_web(), 1);
+var import_web$8 = __toESM(require_web(), 1);
+const _tmpl$ = /*#__PURE__*/ (0, import_web.template)(`<div class="pr-2"><div class="add-response"></div><!#><!/></div>`, 6), _tmpl$2 = /*#__PURE__*/ (0, import_web.template)(`<div class="buttons-container"><!#><!/><!#><!/></div>`, 6), _tmpl$3 = /*#__PURE__*/ (0, import_web.template)(`<div class="response"><div class="header"><!#><!/><div class="buttons"></div></div><!#><!/></div>`, 10), _tmpl$4 = /*#__PURE__*/ (0, import_web.template)(`<div class="send-popout"><div class="header"><h3>Canned Responses</h3><!#><!/></div><div class="body"></div></div>`, 10), _tmpl$5 = /*#__PURE__*/ (0, import_web.template)(`<div></div>`, 2), _tmpl$6 = /*#__PURE__*/ (0, import_web.template)(`<div class="no-responses"><h4>No canned responses</h4><p>Click the "Manage" button to add some.</p></div>`, 6), _tmpl$7 = /*#__PURE__*/ (0, import_web.template)(`<div id="canned-responses"><button><div><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="22" height="22" fill="currentColor"><path d="M512 240c0 114.9-114.6 208-256 208c-37.1 0-72.3-6.4-104.1-17.9c-11.9 8.7-31.3 20.6-54.3 30.6C73.6 471.1 44.7 480 16 480c-6.5 0-12.3-3.9-14.8-9.9c-2.5-6-1.1-12.8 3.4-17.4l0 0 0 0 0 0 0 0 .3-.3c.3-.3 .7-.7 1.3-1.4c1.1-1.2 2.8-3.1 4.9-5.7c4.1-5 9.6-12.4 15.2-21.6c10-16.6 19.5-38.4 21.4-62.9C17.7 326.8 0 285.1 0 240C0 125.1 114.6 32 256 32s256 93.1 256 208z"></path></svg></div></button></div>`, 10);
+const { observeDom, ui: { injectCss, Button, openModal, ModalRoot, ModalHeader, ModalBody, ModalFooter, ModalSizes, ButtonColors, ButtonSizes, TextArea, TextBox, niceScrollbarsClass, showToast }, plugin: { store }, util: { getFiber } } = shelter;
+if (!store.responses) store.responses = [];
+let closeManagementModal = null;
+const managementModal = () => (0, import_web$8.createComponent)(ModalRoot, {
+	get size() {
+		return ModalSizes.MEDIUM;
+	},
+	get children() {
+		return [
+			(0, import_web$8.createComponent)(ModalHeader, {
+				close: () => closeManagementModal(),
+				children: "Canned Responses"
+			}),
+			(0, import_web$8.createComponent)(ModalBody, { get children() {
+				const _el$ = (0, import_web$5.getNextElement)(_tmpl$), _el$2 = _el$.firstChild, _el$3 = _el$2.nextSibling, [_el$4, _co$] = (0, import_web$6.getNextMarker)(_el$3.nextSibling);
+				(0, import_web$7.insert)(_el$2, (0, import_web$8.createComponent)(Button, {
+					onClick: () => {
+						store.responses.push({
+							id: Math.random().toString(36).substring(7),
+							name: "New Response",
+							content: ""
+						});
+					},
+					grow: true,
+					style: { width: "100%" },
+					children: "Add Response"
+				}));
+				(0, import_web$7.insert)(_el$, () => store.responses.map((response) => (() => {
+					const _el$0 = (0, import_web$5.getNextElement)(_tmpl$3), _el$1 = _el$0.firstChild, _el$11 = _el$1.firstChild, [_el$12, _co$4] = (0, import_web$6.getNextMarker)(_el$11.nextSibling), _el$10 = _el$12.nextSibling, _el$13 = _el$1.nextSibling, [_el$14, _co$5] = (0, import_web$6.getNextMarker)(_el$13.nextSibling);
+					(0, import_web$7.insert)(_el$1, (0, import_web$8.createComponent)(TextBox, {
+						get value() {
+							return response.name;
+						},
+						placeholder: "Response name",
+						onInput: (value) => {
+							const index = store.responses.findIndex(({ id }) => id === response.id);
+							store.responses[index].name = value;
+						}
+					}), _el$12, _co$4);
+					(0, import_web$7.insert)(_el$10, (0, import_web$8.createComponent)(Button, {
+						get color() {
+							return ButtonColors.RED;
+						},
+						get size() {
+							return ButtonSizes.MEDIUM;
+						},
+						onClick: () => {
+							store.responses.splice(store.responses.findIndex(({ id }) => id === response.id), 1);
+							store.responses = [...store.responses];
+						},
+						children: "Delete"
+					}));
+					(0, import_web$7.insert)(_el$0, (0, import_web$8.createComponent)(TextArea, {
+						get value() {
+							return response.content;
+						},
+						placeholder: "Message content",
+						onInput: (value) => {
+							const index = store.responses.findIndex(({ id }) => id === response.id);
+							store.responses[index].content = value;
+						}
+					}), _el$14, _co$5);
+					return _el$0;
+				})()), _el$4, _co$);
+				return _el$;
+			} }),
+			(0, import_web$8.createComponent)(ModalFooter, { get children() {
+				const _el$5 = (0, import_web$5.getNextElement)(_tmpl$2), _el$6 = _el$5.firstChild, [_el$7, _co$2] = (0, import_web$6.getNextMarker)(_el$6.nextSibling), _el$8 = _el$7.nextSibling, [_el$9, _co$3] = (0, import_web$6.getNextMarker)(_el$8.nextSibling);
+				(0, import_web$7.insert)(_el$5, (0, import_web$8.createComponent)(Button, {
+					onClick: () => {
+						navigator.clipboard.writeText(JSON.stringify(store.responses));
+						showToast({
+							title: "Exported",
+							content: "Canned responses copied to clipboard",
+							duration: 3e3
+						});
+					},
+					grow: true,
+					children: "Export"
+				}), _el$7, _co$2);
+				(0, import_web$7.insert)(_el$5, (0, import_web$8.createComponent)(Button, {
+					onClick: async () => {
+						const text = await navigator.clipboard.readText();
+						store.responses = JSON.parse(text);
+					},
+					grow: true,
+					children: "Import"
+				}), _el$9, _co$3);
+				return _el$5;
+			} })
+		];
+	}
+});
+const appendTextToMessagebar = (text) => {
+	const elem = document.querySelector("[class*=\"slateContainer\"]");
+	const fiber = getFiber(elem);
+	const editor = fiber.child.pendingProps.editor;
+	editor.insertText(text);
+};
+let sendingPopup = null;
+let popupButton = null;
+const toggleSendingPopup = () => {
+	if (sendingPopup) {
+		sendingPopup.remove();
+		sendingPopup = null;
+		return;
+	}
+	const popupButtonPosition = popupButton.getBoundingClientRect();
+	sendingPopup = document.body.appendChild((() => {
+		const _el$15 = (0, import_web$5.getNextElement)(_tmpl$4), _el$16 = _el$15.firstChild, _el$17 = _el$16.firstChild, _el$18 = _el$17.nextSibling, [_el$19, _co$6] = (0, import_web$6.getNextMarker)(_el$18.nextSibling), _el$20 = _el$16.nextSibling;
+		_el$15.style.setProperty("width", "300px");
+		(0, import_web$7.insert)(_el$16, (0, import_web$8.createComponent)(Button, {
+			onClick: () => {
+				toggleSendingPopup();
+				closeManagementModal = openModal((p) => managementModal());
+			},
+			children: "Manage"
+		}), _el$19, _co$6);
+		(0, import_web$7.insert)(_el$20, (() => {
+			const _c$ = (0, import_web$4.memo)(() => store.responses.length > 0);
+			return () => _c$() ? (() => {
+				const _el$21 = (0, import_web$5.getNextElement)(_tmpl$5);
+				_el$21.style.setProperty("display", "grid");
+				_el$21.style.setProperty("gap", ".5rem");
+				(0, import_web$7.insert)(_el$21, () => store.responses.map((response) => (0, import_web$8.createComponent)(Button, {
+					get size() {
+						return ButtonSizes.MEDIUM;
+					},
+					get color() {
+						return ButtonColors.SECONDARY;
+					},
+					style: { width: "100%" },
+					grow: true,
+					onClick: () => {
+						console.log(response.content);
+						appendTextToMessagebar(response.content);
+						toggleSendingPopup();
+					},
+					get children() {
+						return response.name;
+					}
+				})));
+				(0, import_web$3.effect)(() => _el$21.className = `${niceScrollbarsClass()} send-responses`);
+				return _el$21;
+			})() : (0, import_web$5.getNextElement)(_tmpl$6);
+		})());
+		(0, import_web$3.effect)((_p$) => {
+			const _v$ = `${popupButtonPosition.top + (popupButtonPosition.height + 18)}px`, _v$2 = `${popupButtonPosition.left + popupButtonPosition.width / 2}px`, _v$3 = `translate(-50%, calc(-100% - ${popupButtonPosition.height + 18}px))`;
+			_v$ !== _p$._v$ && _el$15.style.setProperty("top", _p$._v$ = _v$);
+			_v$2 !== _p$._v$2 && _el$15.style.setProperty("left", _p$._v$2 = _v$2);
+			_v$3 !== _p$._v$3 && _el$15.style.setProperty("transform", _p$._v$3 = _v$3);
+			return _p$;
+		}, {
+			_v$: undefined,
+			_v$2: undefined,
+			_v$3: undefined
+		});
+		return _el$15;
+	})());
+	const closeOnOutsideClick = (e) => {
+		if (sendingPopup?.contains(e.target)) return;
+		sendingPopup?.remove();
+		sendingPopup = null;
+		document.removeEventListener("click", closeOnOutsideClick);
+	};
+	document.addEventListener("click", closeOnOutsideClick);
+};
+let unobserve = null;
+function onLoad() {
+	injectCss(`
 .buttons-container {
   display: flex;
   gap: .5rem;
@@ -67,4 +282,37 @@
 .pr-2 {
   padding-right: .5rem;
 }
-`),E=H('[class^="channelTextArea"] [class^="buttons"]',e=>{if(document.querySelector("#canned-responses"))return;let t=e.lastChild.previousSibling;S=e.insertBefore((()=>{let n=J.cloneNode(!0),r=n.firstChild,c=r.firstChild;return r.$$click=_,(0,$.effect)(a=>{let s=t.className,i=t.firstChild.className,l=t.firstChild.firstChild.className;return s!==a._v$4&&(n.className=a._v$4=s),i!==a._v$5&&(r.className=a._v$5=i),l!==a._v$6&&(c.className=a._v$6=l),a},{_v$4:void 0,_v$5:void 0,_v$6:void 0}),n})(),e.firstChild)})}function le(){E(),u?.remove()}(0,y.delegateEvents)(["click"]);return O(de);})();
+`);
+	unobserve = observeDom("[class^=\"channelTextArea\"] [class^=\"buttons\"]", (node) => {
+		if (document.querySelector("#canned-responses")) return;
+		const secondLastChild = node.lastChild.previousSibling;
+		popupButton = node.insertBefore((() => {
+			const _el$23 = (0, import_web$5.getNextElement)(_tmpl$7), _el$24 = _el$23.firstChild, _el$25 = _el$24.firstChild;
+			_el$24.$$click = toggleSendingPopup;
+			(0, import_web$3.effect)((_p$) => {
+				const _v$4 = secondLastChild.className, _v$5 = secondLastChild.firstChild.className, _v$6 = secondLastChild.firstChild.firstChild.className;
+				_v$4 !== _p$._v$4 && (_el$23.className = _p$._v$4 = _v$4);
+				_v$5 !== _p$._v$5 && (_el$24.className = _p$._v$5 = _v$5);
+				_v$6 !== _p$._v$6 && (_el$25.className = _p$._v$6 = _v$6);
+				return _p$;
+			}, {
+				_v$4: undefined,
+				_v$5: undefined,
+				_v$6: undefined
+			});
+			(0, import_web$2.runHydrationEvents)();
+			return _el$23;
+		})(), node.firstChild);
+	});
+}
+function onUnload() {
+	unobserve();
+	sendingPopup?.remove();
+}
+(0, import_web$1.delegateEvents)(["click"]);
+
+//#endregion
+exports.onLoad = onLoad
+exports.onUnload = onUnload
+return exports;
+})({});

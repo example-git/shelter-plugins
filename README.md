@@ -2,7 +2,7 @@
 
 ## gpt
 
-`https://example-git.github.io/shelter-plugins/gpt`
+`https://edde746.github.io/shelter-plugins/gpt`
 
 Generate responses based on recent messages in the channel and a prompt.
 
