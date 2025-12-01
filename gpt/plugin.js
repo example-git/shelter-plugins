@@ -354,7 +354,9 @@ function onLoad() {
   `);
 	unobserveButtons = observeDom("[class^=\"channelTextArea\"] [class^=\"buttons\"]", (node) => {
 		if (document.querySelector("#gpt-toggle")) return;
-		const secondLastChild = node.lastChild?.previousSibling || node.lastChild;
+		if (!node || !node.lastChild) return;
+		const secondLastChild = node.lastChild?.previousSibling || node.lastChild || node.firstChild;
+		if (!secondLastChild || !secondLastChild.firstChild) return;
 		popupButton = node.insertBefore((0, import_web$2.createComponent)(ReactiveRoot, { get children() {
 			const _el$2 = (0, import_web$6.getNextElement)(_tmpl$2), _el$3 = _el$2.firstChild, _el$4 = _el$3.firstChild;
 			_el$3.$$click = () => {
