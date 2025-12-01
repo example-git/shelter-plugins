@@ -333,7 +333,10 @@ export function onLoad() {
     '[class^="channelTextArea"] [class^="buttons"]',
     (node) => {
       if (document.querySelector("#gpt-toggle")) return;
-      const secondLastChild = node.lastChild?.previousSibling || node.lastChild;
+      if (!node || !node.lastChild) return;
+      const secondLastChild =
+        node.lastChild?.previousSibling || node.lastChild || node.firstChild;
+      if (!secondLastChild || !secondLastChild.firstChild) return;
       popupButton = node.insertBefore(
         <ReactiveRoot>
           <div
