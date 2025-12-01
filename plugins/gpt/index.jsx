@@ -1,39 +1,30 @@
 const {
   observeDom,
-  ui: {
-    injectCss,
-    Button,
-    openModal,
-    ModalRoot,
-    ModalHeader,
-    ModalBody,
-    ModalFooter,
-    ModalSizes,
-    Text,
-    TextBox,
-    ReactiveRoot,
-    TextArea,
-    ButtonLooks,
-  },
+  ui: { injectCss, ReactiveRoot },
   plugin: { store },
   util: { getFiber },
 } = shelter;
 
 let popupButton = null;
-let unobserve = null;
+let unobserveButtons = null;
+let unobserveMessages = null;
+let processing = false;
+let pending = false;
+let debounceTimer = null;
+const MODEL_CHECK_TTL = 10 * 60 * 1000; // 10 minutes
 
 const getMessageHistory = () => {
   const messageElements = document.querySelectorAll('div[class^="message-"]');
 
   const messages = [...messageElements].map((message) => ({
     username: message.querySelector("h3 > span > span")?.textContent,
-    message: message.querySelector("div > div > div").textContent,
+    message: message.querySelector("div > div > div")?.textContent || "",
   }));
 
   return messages.reduce((acc, message) => {
     if (message.username) {
       acc.push(message);
-    } else {
+    } else if (acc.length) {
       acc[acc.length - 1].message += `\n${message.message}`;
     }
     return acc;
@@ -69,148 +60,301 @@ const loadingIndicator = () => (
 // https://github.com/yellowsink
 const appendTextToMessagebar = (text) => {
   const elem = document.querySelector('[class*="slateContainer"]');
+  if (!elem) return;
   const fiber = getFiber(elem);
   const editor = fiber.child.pendingProps.editor;
 
   editor.insertText(text);
 };
 
+const setEnabled = (value) => {
+  store.enabled = !!value;
+  popupButton?.classList.toggle("on", store.enabled);
+  popupButton?.classList.toggle("off", !store.enabled);
+  popupButton?.querySelector("button")?.setAttribute(
+    "aria-pressed",
+    store.enabled ? "true" : "false"
+  );
+  if (store.enabled) {
+    startMessageObserver();
+  } else {
+    stopMessageObserver();
+  }
+};
+
+const parseCharacterPresets = () => {
+  if (!store.characterPresets) return [];
+  try {
+    const parsed = JSON.parse(store.characterPresets);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getSelectedCharacter = () => {
+  const presets = parseCharacterPresets();
+  if (!presets.length) return null;
+  if (store.selectedCharacter) {
+    return (
+      presets.find(
+        (p) =>
+          p.name &&
+          typeof p.name === "string" &&
+          p.name.toLowerCase() === store.selectedCharacter.toLowerCase()
+      ) || null
+    );
+  }
+  return presets[0];
+};
+
+const ensureModelAvailable = async (model) => {
+  if (!store.openaiKey) return false;
+  const now = Date.now();
+  if (
+    store.modelStatus &&
+    store.modelStatus.model === model &&
+    now - (store.modelStatus.ts || 0) < MODEL_CHECK_TTL
+  ) {
+    return store.modelStatus.ok;
+  }
+
+  try {
+    const res = await fetch(`https://api.openai.com/v1/models/${model}`, {
+      headers: {
+        Authorization: `Bearer ${store.openaiKey}`,
+      },
+    });
+    const ok = res.ok;
+    store.modelStatus = { model, ok, ts: now };
+    return ok;
+  } catch (err) {
+    console.error("[gpt plugin] model availability check failed", err);
+    store.modelStatus = { model, ok: false, ts: now };
+    return false;
+  }
+};
+
+const sendToApi = async () => {
+  if (!store.enabled) return;
+  const model = store.model || "gpt-3.5-turbo";
+  const prompt = store.prompt || "";
+  const historyCount = store.historyCount || 10;
+  if (!store.openaiKey) return;
+
+  const modelOk = await ensureModelAvailable(model);
+  if (!modelOk) {
+    console.warn(
+      "[gpt plugin] Model not available or API key invalid; skipping send"
+    );
+    return;
+  }
+
+  const myUsername =
+    document.querySelector("[class^=nameTag] > div")?.textContent || "User";
+
+  const character = getSelectedCharacter();
+  const characterPrompt = character
+    ? `You are roleplaying as "${character.name}". ${
+        character.system || ""
+      } ${character.style || ""}`
+    : "";
+
+  const messages = [
+    ...(prompt
+      ? [
+          {
+            role: "system",
+            content: prompt,
+          },
+        ]
+      : []),
+    ...(characterPrompt
+      ? [
+          {
+            role: "system",
+            content: characterPrompt,
+          },
+        ]
+      : []),
+    ...getMessageHistory()
+      .slice(-historyCount)
+      .map((message) => ({
+        role: "user",
+        content: `${message.username}: ${message.message}`,
+      })),
+    {
+      role: "system",
+      content: `Rewrite user messages as "${myUsername}" speaking in-character as ${
+        character?.name || "the chosen persona"
+      }, keeping the same meaning but reflecting the persona.`,
+    },
+  ];
+
+  const messageBar = document.querySelector('[class*="slateContainer"]');
+  const loadingIndicatorElem = messageBar
+    ? document.body.appendChild(loadingIndicator())
+    : null;
+
+  if (loadingIndicatorElem && messageBar) {
+    const { x, y } = messageBar.getBoundingClientRect();
+    loadingIndicatorElem.style.position = "absolute";
+    loadingIndicatorElem.style.left = `${x}px`;
+    loadingIndicatorElem.style.top = `${y + 12}px`;
+    loadingIndicatorElem.style.zIndex = 1000;
+  }
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${store.openaiKey}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+      }),
+    }).then((r) => r.json());
+
+    const response = res.choices?.[0]?.message?.content;
+    if (response) {
+      appendTextToMessagebar(
+        response.replace(/^(?=.{0,49}:)([\w\s-]+?[^ ]):/, "").trim()
+      );
+    }
+  } catch (err) {
+    console.error("[gpt plugin] failed to contact API", err);
+  } finally {
+    loadingIndicatorElem?.remove();
+  }
+};
+
+const scheduleSend = () => {
+  if (!store.enabled) return;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => triggerSend(), store.debounceMs || 200);
+};
+
+const triggerSend = () => {
+  if (!store.enabled) return;
+  if (processing) {
+    pending = true;
+    return;
+  }
+  processing = true;
+  sendToApi().finally(() => {
+    processing = false;
+    if (pending) {
+      pending = false;
+      triggerSend();
+    }
+  });
+};
+
+const startMessageObserver = () => {
+  if (unobserveMessages) return;
+  unobserveMessages = observeDom(
+    '[class^="message-"]:not([data-gpt-observed])',
+    (node) => {
+      node.dataset.gptObserved = "1";
+      if (!store.enabled) return;
+      scheduleSend();
+    }
+  );
+};
+
+const stopMessageObserver = () => {
+  unobserveMessages?.();
+  unobserveMessages = null;
+};
+
 export function onLoad() {
+  store.enabled = store.enabled ?? store.defaultEnabled ?? false;
+  store.model = store.model || "gpt-3.5-turbo";
+  store.prompt = store.prompt || "";
+  store.historyCount = store.historyCount || 10;
+  store.debounceMs = store.debounceMs || 200;
+  store.characterPresets =
+    store.characterPresets ||
+    JSON.stringify(
+      [
+        {
+          name: "Pirate",
+          system: "Always speak like a pirate, with nautical slang.",
+          style: "Be jovial and mischievous.",
+        },
+        {
+          name: "Sherlock",
+          system:
+            "Reply like Sherlock Holmes, precise, deductive, slightly aloof.",
+          style: "Use British English spelling.",
+        },
+      ],
+      null,
+      2
+    );
+  store.selectedCharacter = store.selectedCharacter || "Pirate";
+
   injectCss(`
-  .label-spacing {
-    margin-bottom: .125rem;
+  .gpt-toggle {
+    transition: filter .15s ease, opacity .15s ease;
   }
-  .mb-2 {
-    margin-bottom: .5rem;
+
+  .gpt-toggle button {
+    transition: box-shadow .15s ease, opacity .15s ease, color .15s ease;
   }
-  
-  .pr-2 {
-    padding-right: .5rem;
-  }`);
 
-  let closeModal = null;
-  const openGenerationModal = async () => {
-    let savedModel = store.model || "gpt-3.5-turbo";
+  .gpt-toggle.on button {
+    color: var(--text-normal);
+    box-shadow: 0 0 0 2px rgba(88, 166, 255, .45);
+    filter: drop-shadow(0 0 8px rgba(88, 166, 255, .45));
+  }
 
-    let model = savedModel;
-    let prompt = "";
-    closeModal = openModal((p) => (
-      <ModalRoot size={ModalSizes.SMALL}>
-        <ModalHeader close={() => closeModal()}>Generate Response</ModalHeader>
-        <ModalBody>
-          <div className="pr-2">
-            <div className="mb-2 flex">
-              <div className="label-spacing">
-                <Text>Model</Text>
-              </div>
-              <TextBox
-                placeholder="gpt-3.5-turbo"
-                value={savedModel}
-                onInput={(e) => {
-                  model = e;
-                }}
-              />
-            </div>
-            <div className="label-spacing">
-              <Text>Prompt</Text>
-            </div>
-            <TextArea
-              width="100%"
-              value=""
-              placeholder="Prompt"
-              onInput={(e) => {
-                prompt = e;
-              }}
-            />
-          </div>
-        </ModalBody>
-        <ModalFooter>
-          <div
-            style={{
-              display: "flex",
-            }}
-          >
-            <Button
-              grow={true}
-              onClick={async () => {
-                closeModal();
+  .gpt-toggle.on svg {
+    color: var(--brand-500);
+  }
 
-                const myUsername = document.querySelector(
-                  "[class^=nameTag] > div"
-                ).textContent;
+  .gpt-toggle.off button {
+    opacity: .65;
+  }
 
-                store.model = model;
+  .gpt-toggle.off svg {
+    color: var(--text-muted);
+  }
 
-                const messages = [
-                  ...getMessageHistory()
-                    .slice(-7)
-                    .map((message) => ({
-                      role: "user",
-                      content: `${message.username}: ${message.message}`,
-                    })),
-                  {
-                    role: "system",
-                    content: `generate a response as "${myUsername}" according to the prompt: "${prompt}"`,
-                  },
-                ];
+  .gpt-toggle button:focus-visible {
+    outline: 2px solid var(--brand-500);
+    outline-offset: 2px;
+  }
+  `);
 
-                // add loading indicator
-                const messageBar = document.querySelector(
-                  '[class*="slateContainer"]'
-                );
-                // get absolute position of messagebar
-                const { x, y } = messageBar.getBoundingClientRect();
-                const loadingIndicatorElem = document.body.appendChild(
-                  loadingIndicator()
-                );
-
-                loadingIndicatorElem.style.position = "absolute";
-                loadingIndicatorElem.style.left = `${x}px`;
-                loadingIndicatorElem.style.top = `${y + 12}px`;
-
-                fetch("https://api.openai.com/v1/chat/completions", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${store.openaiKey}`,
-                  },
-                  body: JSON.stringify({
-                    model,
-                    messages,
-                  }),
-                })
-                  .then((res) => res.json())
-                  .then((res) => {
-                    const response = res.choices[0].message.content;
-                    appendTextToMessagebar(
-                      response
-                        .replace(/^(?=.{0,49}:)([\w\s\-]+?[^ ]):/, "")
-                        .trim()
-                    );
-
-                    loadingIndicatorElem.remove();
-                  });
-              }}
-            >
-              Generate
-            </Button>
-          </div>
-        </ModalFooter>
-      </ModalRoot>
-    ));
-  };
-
-  unobserve = observeDom(
+  unobserveButtons = observeDom(
     '[class^="channelTextArea"] [class^="buttons"]',
     (node) => {
-      if (document.querySelector("#generate-button")) return;
-      const secondLastChild = node.lastChild.previousSibling;
+      if (document.querySelector("#gpt-toggle")) return;
+      const secondLastChild = node.lastChild?.previousSibling || node.lastChild;
       popupButton = node.insertBefore(
         <ReactiveRoot>
-          <div className={secondLastChild.className} id="generate-button">
+          <div
+            className={`${secondLastChild.className} gpt-toggle ${
+              store.enabled ? "on" : "off"
+            }`}
+            id="gpt-toggle"
+          >
             <button
-              onClick={openGenerationModal}
+              onClick={() => {
+                const next = !store.enabled;
+                setEnabled(next);
+                if (next) triggerSend();
+              }}
               className={secondLastChild.firstChild.className}
+              aria-pressed={store.enabled}
+              title={
+                store.enabled
+                  ? "GPT auto-generation is enabled"
+                  : "GPT auto-generation is disabled"
+              }
             >
               <div className={secondLastChild.firstChild.firstChild.className}>
                 <svg
@@ -228,12 +372,16 @@ export function onLoad() {
         </ReactiveRoot>,
         node.firstChild
       );
+      setEnabled(store.enabled);
     }
   );
+
+  startMessageObserver();
 }
 
 export function onUnload() {
-  unobserve();
+  unobserveButtons?.();
+  stopMessageObserver();
   popupButton?.remove();
 }
 
